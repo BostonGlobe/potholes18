@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang='en' style='height: auto;'>
+<head>
+    <title>Potholes</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no'>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+    <meta http-equiv='Cache-Control' content='no-cache, no-store, must-revalidate' />
+    <meta http-equiv='Pragma' content='no-cache' />
+    <meta http-equiv='Expires' content='0' />
+
+    <script type='text/javascript'>
+        // https://github.com/filamentgroup/loadJS
+        !function(e){var t=function(t,n){"use strict";var o=e.document.getElementsByTagName("script")[0],r=e.document.createElement("script");return r.src=t,r.async=!0,o.parentNode.insertBefore(r,o),n&&"function"==typeof n&&(r.onload=n),r};"undefined"!=typeof module?module.exports=t:e.loadJS=t}("undefined"!=typeof global?global:this);
+    </script>
+
+    <style>
+        *{-moz-box-sizing:border-box;box-sizing:border-box}a,abbr,acronym,address,applet,article,aside,audio,b,big,blockquote,body,canvas,caption,center,cite,code,dd,del,details,dfn,div,dl,dt,em,embed,fieldset,figcaption,figure,footer,form,h1,h2,h3,h4,h5,h6,header,hgroup,html,i,iframe,img,ins,kbd,label,legend,li,mark,menu,nav,object,ol,output,p,pre,q,ruby,s,samp,section,small,span,strike,strong,sub,summary,sup,table,tbody,td,tfoot,th,thead,time,tr,tt,u,ul,var,video{margin:0;padding:0;border:0;font:inherit;vertical-align:baseline}article,aside,details,figcaption,figure,footer,header,hgroup,menu,nav,section{display:block}body,html{height:100%}a img{border:none}blockquote{quotes:none}blockquote:after,blockquote:before{content:'';content:none}table{border-collapse:collapse;border-spacing:0}caption,td,th{text-align:left;font-weight:400;vertical-align:middle}body{font-family:Georgia,Times New Roman,Times,serif;line-height:1.6}a{transition:color .1s;color:#59889d;text-decoration:none}a:active,a:focus,a:hover{color:#334f5b;text-decoration:none}.source-and-credit{clear:both;width:100%;overflow:hidden;margin-top:1em}.source-and-credit p{line-height:1.6;padding:0;margin:0;font-size:11px;text-align:left;float:none}.source-and-credit .source span{font-weight:700}.source-and-credit .credit span{color:#999;text-transform:uppercase;letter-spacing:.05em}@media (min-width:600px){.source-and-credit .source{float:left}.source-and-credit .credit{text-align:right;float:right}}
+    </style>
+
+    <!-- UPDATE VERSION # IF YOU NEED TO REPUBLISH -->
+    <link rel='stylesheet' href='main.css?version=1' />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+    <link rel='shortcut icon' href='https://www.bostonglobe.com/rw/SysConfig/WebPortal/BostonGlobe/Framework/images/favicon.ico' />
+</head>
+<body style='height: auto;'>
+
+
+
+<!-- *** DO NOT DELETE *** -->
+<div id='globe-graphic-container' style='height: 100%; overflow: hidden;'>
+
+    <!--
+    ==========================
+    BEGIN: GRAPHIC CODE HERE
+    ==========================
+    -->
+
+
+    <div class='graphichead'>A city with potholes</div>
+    <p class='subtitle'>This map shows all the potholes reported in 2017. Hover on the top right button to see other years.</p>
+
+    <div id="map">
+        <a href="http://mapbox.com/about/maps" class='mapbox-wordmark' target="_blank">Mapbox</a>
+    </div>
+    <a href="https://goo.gl/forms/Ixd1tmXxWu5qI2vm2" target="_blank">Click here to submit the potholes</a>
+
+    <div id="plot">
+        <svg class="canvas"></svg>
+    </div>
+
+    <!-- begin ai2html here DO NOT MODIFY THIS LINE -->
+
+    <!-- end ai2html here DO NOT MODIFY THIS LINE -->
+    <div class="tooltip"></div>
+    <div class='source-and-credit'>
+        <p class='source'><span>SOURCE: Boston 311 Service Requests</span></p>
+        <p class='credit'><span>Yan Wu / Globe Staff</span></p>
+    </div>
+    <!--
+    ==========================
+    END OF GRAPHIC CODE
+    ==========================
+    -->
+
+</div>
+
+<!-- (begin) put js libraries here -->
+<script src='https://cdnjs.cloudflare.com/ajax/libs/d3/4.10.0/d3.min.js' type='text/javascript'></script>
+<script
+        src="https://code.jquery.com/jquery-3.2.1.js"
+        integrity="sha256-DZAnKJ/6XZ9si04Hgrsxu/8s717jcIzLy3oi35EouyE="
+        crossorigin="anonymous"></script>
+<script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-easybutton@2.0.0/src/easy-button.js"></script>
+<script src="https://unpkg.com/@mapbox/leaflet-pip@latest/leaflet-pip.js"></script>
+
+<!-- (end) -->
+
+<!--
+============================
+*** DO NOT GO BELOW HERE ***
+============================
+-->
+
+
+<!-- (begin) globe iframe embed -->
+<script src='https://apps.bostonglobe.com/common/js/pym/pym-poll.min.js'></script>
+<script>
+    // version
+    if (window.console && console.log) console.log('-- globe iframe graphic v2.0.3 --');
+    (function() {
+        var d = new Date();
+        var timestamp = d.getTime();
+        var js = 'main.js?v=' + timestamp;
+        loadJS(js, function() {
+            window.pymChild = pym.Child({ renderCallback: window.onResize, polling: true });
+            pymChild.onMessage('enter-view', window.enterView);
+            pymChild.sendMessage('ready', true);
+        });
+    })();
+</script>
+<!-- (end) globe iframe embed -->
+</body>
+</html>
