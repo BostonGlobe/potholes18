@@ -43,13 +43,12 @@
     // https://docs.google.com/spreadsheets/d/e/2PACX-1vT_dsN_2YF5hdLd9ALxefxfEsDfJuUQCJiRYDszxlPYIW8q5BaCnnbzlpsBw8EMlDOXr8QEZWEWL2HX/pubhtml
     d3.queue()
         .defer(d3.json, './assets/bos_neighborhoods.json')
-        .defer(d3.csv, './assets/Potholes15-18.csv', parceCSV)
+        //.defer(d3.csv, './assets/Potholes15-18.csv', parceCSV)
+        .defer(d3.csv, './assets/PotholesData12-18.csv', parceCSV)
         //.defer(d3.json, 'https://spreadsheets.google.com/feeds/cells/1HYshjqehc-Q22ZJOpbbhZa5e-6V8_OopMNNa-4GZ1RU/1/public/values?alt=json-in-script')
         .await(dataloaded);
 
     function dataloaded(err, geo, data) {
-        console.log(geo);
-        console.log(data);
 
         holes15 = L.layerGroup();
         holes16 = L.layerGroup();
@@ -108,24 +107,20 @@
         var  margin = {top: 10, right: 30, bottom: 30, left: 40},
             // width = 1000,
             // height = 700;
-            width = document.getElementById('plot').clientWidth/2 - margin.left - margin.right,
-            height = document.getElementById('plot').clientHeight - margin.top - margin.bottom,
-            fullWidth = document.getElementById('plot').clientWidth/2,
-            fullHeight = document.getElementById('plot').clientHeight;
-
-            console.log(fullWidth, fullHeight);
+            width = document.getElementById('plot').clientWidth - margin.left - margin.right,
+            height = document.getElementById('plot').clientHeight - margin.top - margin.bottom;
 
             var svg = d3.select('.canvas')
-                // .attr('width', width+ margin.left+margin.right)
-                // .attr('height', height+margin.top + margin.bottom)
-                .attr('viewbox', '0 0 400 300')
+                .attr('width', width+ margin.left+margin.right)
+                .attr('height', height+margin.top + margin.bottom)
+                .attr('viewbox', '0 0 1500 1000')
                 .attr('preserveAspectRatio', 'xMidYMid meet')
                 .append('g')
-                .attr('class', 'canvasG');
-                //.attr('transform', 'translate('+ margin.left+ ',' +margin.top +')');
+                .attr('class', 'canvasG')
+                .attr('transform', 'translate('+ margin.left+ ',' +margin.top +')');
 
             var scaleX = d3.scaleTime()
-                .domain([new Date(2015, 0, 1), new Date(2018, 0, 31)])
+                .domain([new Date(2012, 7, 1), new Date(2018, 0, 31)])
                 .rangeRound([0, width]);
 
             var histogram = d3.histogram()
@@ -204,12 +199,34 @@
 
             // add the y Axis
             svg.append("g")
-                .call(d3.axisLeft(scaleY));
+                .call(d3.axisLeft(scaleY).ticks(4));
+
+        var brushX = d3.brushX()
+            .extent([[0, 0], [width, height]])
+            .on("end", brushed);
+
+        svg.append('g')
+            .attr("class", "brush")
+            .call(brushX);
+
+        function brushed() {
+            if (d3.event.sourceEvent.type === "brush") return;
+            var d0 = d3.event.selection.map(scaleX.invert);
+            console.log(d0);
+            var d1 = d0.map(d3.timeMonth.round);
+
+            console.log(d1);
+
+            // If empty when rounded, use floor instead.
+            // if (d1[0] >= d1[1]) {
+            //     d1[0] = d3.timeDay.floor(d0[0]);
+            //     d1[1] = d3.timeDay.offset(d1[0]);
+            // }
 
 
-
-
+        }
     }
+
     function getDate(date) {
         var monthNames = ["Jan.", "Feb.", "Mar.", "Apr.", "May", "Jun.",
             "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."];
@@ -251,7 +268,7 @@
     }
     function parceCSV(d) {
         return {
-            year: +d.year,
+            year: +parceTime(d['open_dt']).getYear()+1900,
             opendate: parceTime(d['open_dt']),
             closedate: (d['closed_dt'])? parceTime(d['closed_dt']):'',
             lat: (d.Latitude)? (+d.Latitude): 0,
