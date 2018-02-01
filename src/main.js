@@ -33,12 +33,12 @@
     //       attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
     //   });
 
-
+    var dispatch = d3.dispatch('brushend');
     // graphic code
     var typeSet = d3.set();
     var random;
     var circlesByYear, circleGroup;
-    var holes15, holes16, holes17, holes18;
+    var holes15, holes16, holes17, holes18, brushedHoles;
 
     // https://docs.google.com/spreadsheets/d/e/2PACX-1vT_dsN_2YF5hdLd9ALxefxfEsDfJuUQCJiRYDszxlPYIW8q5BaCnnbzlpsBw8EMlDOXr8QEZWEWL2HX/pubhtml
     d3.queue()
@@ -54,6 +54,7 @@
         holes16 = L.layerGroup();
         holes17 = L.layerGroup();
         holes18 = L.layerGroup();
+        brushedHoles = L.layerGroup();
 
         var shapeMap = L.geoJSON(geo, {
             style: function (d) {
@@ -71,16 +72,17 @@
             "Street": streetMap
         };
         var overlayMaps = {
+            '<span style="color: steelblue">▇</span> You choose': brushedHoles,
             '<span style="color: #984ea3">▇</span> 2018': holes18,
             '<span style="color: #4daf4a">▇</span> 2017': holes17,
-            '<span style="color: #377eb8">▇</span> 2016': holes16,
-            '<span style="color: #e41a1c">▇</span> 2015': holes15
+            '<span style="color: orange">▇</span> 2016': holes16,
+            '<span style="color: #e41a1c">▇</span> 2015': holes15,
         };
 
         var map = L.map('map', {
             center: [42.323, -71.072],
             zoom: 12,
-            layers: [streetMap, holes18],
+            layers: [streetMap, holes18, brushedHoles],
             scrollWheelZoom: false,
             //zoomControl: false,
             attributionControl: false,
@@ -205,24 +207,59 @@
             .extent([[0, 0], [width, height]])
             .on("end", brushed);
 
-        svg.append('g')
-            .attr("class", "brush")
-            .call(brushX);
+        var arc = d3.arc()
+            .outerRadius(height / 15)
+            .startAngle(0)
+            .endAngle(function(d, i) { return i ? -Math.PI : Math.PI; });
 
+        var brushg = svg.append('g')
+            .attr("class", "brush");
+
+            brushg
+            .call(brushX)
+            .call(brushX.move, [new Date(2014, 0, 1), new Date(2014, 3, 1)].map(scaleX));
+        brushEnd([new Date(2014, 0, 1), new Date(2014, 3, 1)]); //initialize
+
+
+        brushg.selectAll(".handle").append("path")
+            .attr("transform", "translate(0," +  height / 2 + ")")
+            .attr("d", arc)
+            .attr('class', 'handle');
+
+
+        dispatch.on('brushend', brushEnd);
+
+        function brushEnd(val) {
+                console.log(val);
+                brushedHoles.clearLayers();
+                var yearData = data.filter(function (d) {
+                    return d.opendate >= val[0] && d.opendate< val[1];
+                });
+                console.log(yearData.length);
+                yearData.forEach(function (t) {
+                    var circle = L.circleMarker([t.lat, t.lng], {
+                        stroke:false,
+                        fillColor: 'steelblue',
+                        fillOpacity: 0.5,
+                        radius: 2,
+                        className: 'circle'
+                    });
+                    circle.addTo(brushedHoles);
+                });
+        }
         function brushed() {
-            if (d3.event.sourceEvent.type === "brush") return;
+            if (!d3.event.sourceEvent) return; // Only transition after input.
+            if (!d3.event.selection) return; // Ignore empty selections.
             var d0 = d3.event.selection.map(scaleX.invert);
-            console.log(d0);
+           // console.log(d0);
             var d1 = d0.map(d3.timeMonth.round);
 
-            console.log(d1);
-
-            // If empty when rounded, use floor instead.
-            // if (d1[0] >= d1[1]) {
-            //     d1[0] = d3.timeDay.floor(d0[0]);
-            //     d1[1] = d3.timeDay.offset(d1[0]);
-            // }
-
+            dispatch.call('brushend', this, d1);
+            if (d1[0] >= d1[1]) {
+                d1[0] = d3.timeMonth.floor(d0[0]);
+                d1[1] = d3.timeMonth.offset(d1[0]);
+            }
+            d3.select(this).transition().call(d3.event.target.move, d1.map(scaleX));
 
         }
     }
@@ -251,7 +288,7 @@
         if(num==15){
             c = '#e41a1c'
         } else if(num ==16){
-            c = '#377eb8'
+            c = 'orange'
         } else if(num ==17){
             c = '#4daf4a'
         } else if(num ==18){
