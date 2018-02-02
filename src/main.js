@@ -1,7 +1,28 @@
 'use strict';
 (function() {
 	// global variables
+    var streetMap = L.tileLayer('https://api.mapbox.com/styles/v1/gabriel-florit/cjc6jt6kk3thh2rpbd5pa6a0r/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoiZ2FicmllbC1mbG9yaXQiLCJhIjoiVldqX21RVSJ9.Udl7GDHMsMh8EcMpxIr2gA', {
+        id: 'mapbox.street',
+        attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
+    });
+    var holes15 = L.layerGroup(),
+        holes16 = L.layerGroup(),
+        holes17 = L.layerGroup(),
+        holes18 = L.layerGroup(),
+        brushedHoles = L.layerGroup();
 
+    var map= L.map('map', {
+        center: [42.323, -71.072],
+        zoom: 12,
+        layers: [streetMap, brushedHoles],
+        scrollWheelZoom: false,
+        //zoomControl: false,
+        attributionControl: false,
+        doubleClickZoom: false,
+        zoomSnap: 0.2,
+        //dragging: false,
+        //preferCanvas: true
+    });
 
 
 	// called once on page load
@@ -16,7 +37,7 @@
 
 	// called when the graphic enters the viewport
 	window.enterView = function() {
-
+        map.fitBounds([[42.398768, -71.187746],[42.229946, -70.983835]]);
 	};
 
 
@@ -24,10 +45,7 @@
     //https://docs.google.com/spreadsheets/d/e/2PACX-1vT_dsN_2YF5hdLd9ALxefxfEsDfJuUQCJiRYDszxlPYIW8q5BaCnnbzlpsBw8EMlDOXr8QEZWEWL2HX/pubhtml
 
 
-      var streetMap = L.tileLayer('https://api.mapbox.com/styles/v1/gabriel-florit/cjc6jt6kk3thh2rpbd5pa6a0r/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoiZ2FicmllbC1mbG9yaXQiLCJhIjoiVldqX21RVSJ9.Udl7GDHMsMh8EcMpxIr2gA', {
-        id: 'mapbox.street',
-        attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
-    });
+
     //   var streetMap = L.tileLayer('https://api.mapbox.com/styles/v1/gabriel-florit/cj8vpf6aw7w022tqq4wuugiil/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoiZ2FicmllbC1mbG9yaXQiLCJhIjoiVldqX21RVSJ9.Udl7GDHMsMh8EcMpxIr2gA', {
     //       id: 'mapbox.street',
     //       attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
@@ -35,10 +53,8 @@
 
     var dispatch = d3.dispatch('brushend');
     // graphic code
-    var typeSet = d3.set();
-    var random;
-    var circlesByYear, circleGroup;
-    var holes15, holes16, holes17, holes18, brushedHoles;
+
+
 
     // https://docs.google.com/spreadsheets/d/e/2PACX-1vT_dsN_2YF5hdLd9ALxefxfEsDfJuUQCJiRYDszxlPYIW8q5BaCnnbzlpsBw8EMlDOXr8QEZWEWL2HX/pubhtml
     d3.queue()
@@ -49,12 +65,6 @@
         .await(dataloaded);
 
     function dataloaded(err, geo, data) {
-
-        holes15 = L.layerGroup();
-        holes16 = L.layerGroup();
-        holes17 = L.layerGroup();
-        holes18 = L.layerGroup();
-        brushedHoles = L.layerGroup();
 
         var shapeMap = L.geoJSON(geo, {
             style: function (d) {
@@ -79,17 +89,6 @@
             '<span style="color: #e41a1c">▇</span> 2015': holes15,
         };
 
-        var map = L.map('map', {
-            center: [42.323, -71.072],
-            zoom: 12,
-            layers: [streetMap, holes18, brushedHoles],
-            scrollWheelZoom: false,
-            //zoomControl: false,
-            attributionControl: false,
-            doubleClickZoom: false,
-            //dragging: false,
-            //preferCanvas: true
-        });
 
         shapeMap.addTo(map);
 
@@ -207,28 +206,31 @@
             .extent([[0, 0], [width, height]])
             .on("end", brushed);
 
-        var arc = d3.arc()
-            .outerRadius(height / 15)
-            .startAngle(0)
-            .endAngle(function(d, i) { return i ? -Math.PI : Math.PI; });
-
         var brushg = svg.append('g')
-            .attr("class", "brush");
+            .attr("class", "brush")
+            .call(brushX);
+        brushg.selectAll(".handle").remove();
+        
+        brushg.selectAll('.overlay').each(function (d) {
+            d.type = 'selection';
+        }).on('mousedown touchstart', brushcentered);
 
-            brushg
-            .call(brushX)
-            .call(brushX.move, [new Date(2014, 0, 1), new Date(2014, 3, 1)].map(scaleX));
         brushEnd([new Date(2014, 0, 1), new Date(2014, 3, 1)]); //initialize
 
 
-        brushg.selectAll(".handle").append("path")
-            .attr("transform", "translate(0," +  height / 2 + ")")
-            .attr("d", arc)
-            .attr('class', 'handle');
 
+        brushg
+            .call(brushX.move, [new Date(2014, 0, 1), new Date(2014, 3, 1)].map(scaleX));
 
         dispatch.on('brushend', brushEnd);
 
+        function brushcentered() {
+            var dx = scaleX(new Date(2014, 3, 1)) - scaleX(new Date(2014, 0, 1)), // Use a fixed width when recentering.
+                cx = d3.mouse(this)[0],
+                x0 = cx - dx / 2,
+                x1 = cx + dx / 2;
+            d3.select(this.parentNode).call(brushX.move, x1 > width ? [width - dx, width] : x0 < 0 ? [0, dx] : [x0, x1]);
+        }
         function brushEnd(val) {
                 console.log(val);
                 brushedHoles.clearLayers();
@@ -236,6 +238,8 @@
                     return d.opendate >= val[0] && d.opendate< val[1];
                 });
                 console.log(yearData.length);
+                d3.select('.timeRange').text(dateFormat(val));
+                d3.select('.complaints').text(yearData.length);
                 yearData.forEach(function (t) {
                     var circle = L.circleMarker([t.lat, t.lng], {
                         stroke:false,
@@ -247,9 +251,12 @@
                     circle.addTo(brushedHoles);
                 });
         }
+
         function brushed() {
             if (!d3.event.sourceEvent) return; // Only transition after input.
-            if (!d3.event.selection) return; // Ignore empty selections.
+            if (!d3.event.selection) {
+                return;
+            } // Ignore empty selections.
             var d0 = d3.event.selection.map(scaleX.invert);
            // console.log(d0);
             var d1 = d0.map(d3.timeMonth.round);
@@ -276,7 +283,7 @@
         var yearData = data.filter(function (d) {
             return d.year == year
         });
-        console.log(yearData.length);
+        // console.log(yearData.length);
         yearData.forEach(function (t) {
             var circle = L.circleMarker([t.lat, t.lng], style);
             circle.addTo(layer);
@@ -303,6 +310,23 @@
             className: 'circle'
         }
     }
+
+    function dateFormat(val) {
+       //val is an array;
+       var day1 = showMonth(val[0].getMonth())+' '+ val[0].getDate() +', '+ (val[0].getYear()+1900);
+       var day02 = new Date(val[1] - 86400000);
+       var day2 = showMonth(day02.getMonth())+' '+ day02.getDate() +', '+ (day02.getYear()+1900);
+
+       console.log(day1, day2);
+       return day1 +' to '+ day2;
+    }
+    function showMonth(month) {
+        var monthStr = ["Jan.", "Feb.", "Mar.", "Apr.", "May", "Jun.",
+            "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."
+        ];
+        return monthStr[month];
+    }
+
     function parceCSV(d) {
         return {
             year: +parceTime(d['open_dt']).getYear()+1900,
